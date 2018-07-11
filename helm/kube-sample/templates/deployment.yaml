@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+    chart: {{ template "kube-sample.chart" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  strategy:
+    type: Recreate #RollingUpdate
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        app: {{ .Release.Name }}
+        ts: {{ now | date "2006-01-02T15-04-05.999999" }}
+    spec:
+      restartPolicy: Always
+      volumes:
+        - name: {{ .Release.Name }}-credentials
+          secret:
+            secretName: {{ .Release.Name }}-credentials
+      containers:
+        - name: {{ .Release.Name }}
+          image: {{ .Release.Name }}
+          imagePullPolicy: Never
+          tty: true
+          stdin: true
+          envFrom:
+            - configMapRef:
+                name: config-team
+            - secretRef:
+                name: {{ .Release.Name }}
+          volumeMounts:
+            - name: {{ .Release.Name }}-credentials
+              mountPath: /credentials/
+              readOnly: true
